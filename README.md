@@ -1,15 +1,13 @@
 # JsonQuery
 Here is an implementation of query information from text in JSON format. The standard way of marshal/unmarshall JSON text from/to GO structures is to define the structure with exactly same format as JSON. Example from https://gobyexample.com/json:
-type Response1 struct {
-    Page   int
-    Fruits []string
+type Response2 struct {
+    Page   int      `json:"page"`
+    Fruits []string `json:"fruits"`
 }
-res1D := &Response1{
-    Page:   1,
-    Fruits: []string{"apple", "peach", "pear"}}
-res1B, _ := json.Marshal(res1D)
-fmt.Println(string(res1B))
-
+ str := `{"page": 1, "fruits": ["apple", "peach"]}`
+ res := Response2{}
+ json.Unmarshal([]byte(str), &res)
+ 
 But what about arbitrary JSON texts?
 
 The simple example:
