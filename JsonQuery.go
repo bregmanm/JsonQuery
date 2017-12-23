@@ -33,7 +33,6 @@ func switchType(value interface{}, jqb *jsonQueryDescriptor, result *[]Entry) {
 				submap := make(map[string]interface{})
 				keys := v.MapKeys()
 				for _, key := range keys {
-					fmt.Println("key", key)
 					submap[key.String()] = v.MapIndex(key)
 				}
 				recursiveQueryKeysValues(submap, jqb, result)
@@ -88,7 +87,6 @@ func recursiveQueryArrayValues(arrDat []interface{}, jqb *jsonQueryDescriptor, r
 	arr := reflect.ValueOf(arrDat)
 	for i := 0; i < arr.Len() && !jqb.limitExceed; i++ {
 		value := arr.Index(i)
-		fmt.Println("Array value:", value)
 		switchType(value, jqb, result)
 	}
 }
