@@ -19,11 +19,26 @@ type Entry struct {
 }
 
 func switchType(value interface{}, jqb *jsonQueryDescriptor, result *[]Entry) {
-	switch value.(type) {
+	switch f := value.(type) {
 	case []interface {}: // array
 		recursiveQueryArrayValues(value.([]interface {}), jqb, result)
 	case map[string]interface {}: // nested json
 		recursiveQueryKeysValues(value.(map[string]interface {}), jqb, result)
+	case reflect.Value:
+		switch f.Kind() {
+		case reflect.Interface:
+			v := f.Elem()
+			switch v.Kind() {
+			case reflect.Map:
+				submap := make(map[string]interface{})
+				keys := v.MapKeys()
+				for _, key := range keys {
+					fmt.Println("key", key)
+					submap[key.String()] = v.MapIndex(key)
+				}
+				recursiveQueryKeysValues(submap, jqb, result)
+			}
+		}
 	}
 }
 
@@ -34,8 +49,31 @@ func recursiveQueryKeysValues(dat map[string]interface{}, jqb *jsonQueryDescript
 		if jqb.limitExceed {
 			break
 		}
-		if jqb.funcFilter(key, value) { // Pair key:value is math
-			*result = append(*result, Entry{key, value})
+		var entry = Entry{key, value}
+		// Change value to primitive type when possible
+		switch f := value.(type) {
+		case reflect.Value:
+			switch f.Kind() {
+			case reflect.Interface:
+				v := f.Elem()
+				switch v.Kind() {
+				case reflect.Bool:
+					entry.Value = v.Bool()
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					entry.Value = uint64(v.Int())
+				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+					entry.Value = v.Uint()
+				case reflect.Float32, reflect.Float64:
+					entry.Value = v.Float()
+				case reflect.Complex64, reflect.Complex128:
+					entry.Value = v.Complex()
+				case reflect.String:
+					entry.Value = v.String()
+				}
+			}
+		}
+		if jqb.funcFilter(key, entry.Value) { // Pair key:value is match
+			*result = append(*result, entry)
 			if jqb.limit > 0 && len(*result) >= jqb.limit { // stop on limit
 				jqb.limitExceed = true
 				break
@@ -50,6 +88,7 @@ func recursiveQueryArrayValues(arrDat []interface{}, jqb *jsonQueryDescriptor, r
 	arr := reflect.ValueOf(arrDat)
 	for i := 0; i < arr.Len() && !jqb.limitExceed; i++ {
 		value := arr.Index(i)
+		fmt.Println("Array value:", value)
 		switchType(value, jqb, result)
 	}
 }
@@ -131,14 +170,24 @@ func main() {
 	{
 		"CEO":{"name":"John","Salary":10000},
 		"Secretary":{"name":"Evelina","Salary":2000},
-		"Marketing":{"Group1":
+		"Others":[{"Group1":
 			{"name":"Fabian","Salary":3000}},
-		"Accounting":{"Group2":
+			{"Group2":
 			{"name":"Gabriel","Salary":3500}}
+		]
 	}
 	`
-	result := New().SetSourceJsonText(sourceJson).SetKeyFilter("Salary").SetLimit(1).Query()
-	fmt.Println("Result of query", result)
+	fmt.Println("Query all pairs \"Salary\":<any value>",
+		New().SetSourceJsonText(sourceJson).SetKeyFilter("Salary").Query())
+
+	fmt.Println("Query one pair \"Salary\":<any value>",
+		New().SetSourceJsonText(sourceJson).SetKeyFilter("Salary").SetLimit(1).Query())
+
+	fmt.Println("Query pairs \"Salary\":<any value> where salary value > 2500",
+		New().SetSourceJsonText(sourceJson).SetFilter(
+			func(s string, i interface{}) bool {
+				return s == "Salary" && i.(float64) > 2500
+			}).Query())
 
 
 }
