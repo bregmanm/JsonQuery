@@ -11,16 +11,17 @@ type Response2 struct {
 But what about arbitrary JSON texts?
 
 The simple example:
-    {
-	"CEO":{"name":"John","Salary":10000},
-	"Secretary":{"name":"Evelina","Salary":2000},
-	"Marketing":{"Group1":
-	    {"name":"Fabian","Salary":3000}},
-	"Accounting":{"Group2":
-	    {"name":"Gabriel","Salary":3500}}
-    }
+	{
+		"CEO":{"name":"John","Salary":10000},
+		"Secretary":{"name":"Evelina","Salary":2000},
+		"Others":[{"Group1":
+			{"name":"Fabian","Salary":3000}},
+			{"Group2":
+			{"name":"Gabriel","Salary":3500}}
+		]
+	}
 
-The pair "Salary":value is placed in various levels of JSON. Is it possible collect all such pairs without defining the appropriate structure?
+The pair "Salary":value is placed in various levels of JSON. The task is to collect all such pairs without defining the appropriate structure.
 I discovered one interesting example from the same http page:
     var dat map[string]interface{}
     if err := json.Unmarshal(byt, &dat); err != nil {
