@@ -21,7 +21,7 @@ The simple example:
 		]
 	}
 
-The pair "Salary":value is placed in various levels of JSON. The task is to collect all such pairs without defining the appropriate structure.
+The pair "Salary":value is placed in various nested structures of JSON. The task is to collect all such pairs without defining the appropriate structure.
 I discovered one interesting example from the same http page:
     var dat map[string]interface{}
     if err := json.Unmarshal(byt, &dat); err != nil {
